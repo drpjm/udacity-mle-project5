@@ -10,8 +10,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import random as rnd
 import os
-from tfhelpers import fully_conn_nn_layer
-from tfhelpers import variable_summaries
+import tfhelpers as tfh
 
 # Function that will create a randomly sampled batch of data.
 def next_batch(xs, ys, batch_size):
@@ -65,10 +64,10 @@ def run_toy():
 	num_neurons = 100
 	
 	# Layer 1 - ReLU activation layer
-	layer1, W1, b1 = fully_conn_nn_layer(x, 2, num_neurons, 'layer1')
+	layer1, W1, b1 = tfh.fully_conn_nn_layer(x, 2, num_neurons, 'layer1')
 	
 	# Layer 2 - Softmax to generate class probabilities
-	y_output, W2, b2 = fully_conn_nn_layer(layer1, num_neurons, K, 'layer2', act_fn=tf.nn.softmax)
+	y_output, W2, b2 = tfh.fully_conn_nn_layer(layer1, num_neurons, K, 'layer2', act_fn=tf.nn.softmax)
 	
 	# Loss function construction:
 	l = 0.001

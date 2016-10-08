@@ -5,6 +5,17 @@ Created on Oct 4, 2016
 '''
 import tensorflow as tf
 
+# variable declaration helper functions
+# Make the weight variables be a little noisy around 0.0.
+def weight_variable(shape):
+	initial = tf.truncated_normal(shape, stddev=0.1)
+	return tf.Variable(initial)
+
+# creates a small positive bias
+def bias_variable(shape):
+	initial = tf.constant(0.1, shape=shape)
+	return tf.Variable(initial)
+
 # variable_summaries collects the mean, stdev, max, and min
 # values of the supplied variable, var.
 def variable_summaries(var, name):
@@ -16,7 +27,7 @@ def variable_summaries(var, name):
         tf.scalar_summary('sttdev/' + name, stddev)
         tf.scalar_summary('max/' + name, tf.reduce_max(var))
         tf.scalar_summary('min/' + name, tf.reduce_min(var))
-        tf.histogram_summary(name, var)
+#         tf.histogram_summary(name, var)
 
 # fully_conn_nn_layer generates a fully connected
 # NN layer based on the supplied input_tensor, input, and output dims.
@@ -34,3 +45,11 @@ def fully_conn_nn_layer(input_tensor, in_dim, out_dim, layer_name, act_fn=tf.nn.
         acts = act_fn(pre_act, 'activations')
         tf.histogram_summary(layer_name + '/activations', acts)
         return acts, W, b
+
+# Support functions for convolutional NN
+def conv2d(x, W):
+	return tf.nn.conv2d(x, W, strides=[1,1,1,1], padding='SAME')
+
+# Maxpooling over 2x2 blocks
+def max_pool_2x2(x):
+	return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
