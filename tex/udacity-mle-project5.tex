@@ -167,6 +167,21 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
+    \subfigure[Encoding for ``27''.]{
+        \centering
+        \includegraphics[width=0.45\textwidth]{graphics/train/image1_onehot_27.png}
+    }
+    \subfigure[Encoding for ``20''.]{
+        \centering
+        \includegraphics[width=0.45\textwidth]{graphics/train/image2_onehot_20.png}
+    }
+    \caption{This figure shows the one-hot encoding for two of the example training images. Since each of these digit sequences has length 2, rows indices 3 through 5 have an encoding of 10, which means there is no digit in positions 3, 4, or 5.}
+    \label{fig:training_onehot}
+\end{figure*}
+
+
+\begin{figure*}[ht]
+    \centering
     \subfigure[A picture of ``30''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/test/image1.png}
@@ -210,6 +225,19 @@ My preprocessing algorithm iterated over the entire training and testing data an
     \label{fig:testingpics_cropped}
 \end{figure*}
 
+\begin{figure*}[ht]
+    \centering
+    \subfigure[Encoding for ``30''.]{
+        \centering
+        \includegraphics[width=0.45\textwidth]{graphics/test/image1_onehot_30.png}
+    }
+    \subfigure[Encoding for ``3''.]{
+        \centering
+        \includegraphics[width=0.45\textwidth]{graphics/test/image2_onehot_3.png}
+    }
+    \caption{This figure shows the encoding for two test images: ``30'' and ``3''.}
+    \label{fig:training_onehot}
+\end{figure*}
 
 
 \begin{thebibliography}{99}
