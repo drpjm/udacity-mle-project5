@@ -15,8 +15,8 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import scale
 import cPickle as pkl
 
-train_loc_root = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/data/train/'
-test_loc_root = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/data/test/'
+# train_loc_root = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/data/train/'
+# test_loc_root = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/data/test/'
 
 # Crops a square, but may be skewed if the square goes outside of the top or left axis.
 def square_dims(img_dict):
@@ -113,7 +113,8 @@ def load_svhn_pkl(fname):
     svhn_pkl_file.close()
     return loaded_dataset
 
-def build_data_sets():
+# Invokes the preprocessing algorithms above on training and test data.
+def build_data_sets(train_loc_root, test_loc_root):
 	test_dataset = generate_svhn_dataset(test_loc_root, 11, 6, 32, 5)
 	pickle_svhn("test", test_dataset)
 	train_dataset = generate_svhn_dataset(train_loc_root, 11, 6, 32, 5)
