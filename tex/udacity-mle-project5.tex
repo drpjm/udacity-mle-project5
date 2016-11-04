@@ -122,19 +122,19 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[A picture of ``27''.]{
+    \subfigure[Original image of ``50''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/train/image1.png}
     }
-    \subfigure[A picture of ``20''.]{
+    \subfigure[Original image of ``25''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/train/image2.png}
     }
-    \subfigure[A picture of ``68''.]{
+    \subfigure[Original image of ``115''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/train/image3.png}
     }
-    \subfigure[A picture of ``73''.]{
+    \subfigure[Original image of ``60''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/train/image4.png}
     }
@@ -145,35 +145,35 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[A picture of ``27''.]{
+    \subfigure[``50'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/train/image1_crop.png}
     }
-    \subfigure[A picture of ``20''.]{
+    \subfigure[``25'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/train/image2_crop.png}
     }
-    \subfigure[A picture of ``68''.]{
+    \subfigure[``115'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/train/image3_crop.png}
     }
-    \subfigure[A picture of ``73''.]{
+    \subfigure[``60'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/train/image4_crop.png}
     }
-    \caption{The processed images from Figure \ref{fig:trainingpics}, which were converted to grayscale and cropped.}
+    \caption{The processed images from Figure \ref{fig:trainingpics}, which were converted to grayscale, cropped to a square shape, and resized to a $32\times32$ pixel image.}
     \label{fig:trainingpics_cropped}
 \end{figure*}
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[Encoding for ``27''.]{
+    \subfigure[Encoding for ``50''.]{
         \centering
-        \includegraphics[width=0.45\textwidth]{graphics/train/image1_onehot_27.png}
+        \includegraphics[width=0.45\textwidth]{graphics/train/image1_onehot.png}
     }
-    \subfigure[Encoding for ``20''.]{
+    \subfigure[Encoding for ``25''.]{
         \centering
-        \includegraphics[width=0.45\textwidth]{graphics/train/image2_onehot_20.png}
+        \includegraphics[width=0.45\textwidth]{graphics/train/image2_onehot.png}
     }
     \caption{This figure shows the one-hot encoding for two of the example training images. Since each of these digit sequences has length 2, rows indices 3 through 5 have an encoding of 10, which means there is no digit in positions 3, 4, or 5.}
     \label{fig:training_onehot}
@@ -182,19 +182,19 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[A picture of ``30''.]{
+    \subfigure[Original image of ``33''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/test/image1.png}
     }
-    \subfigure[A picture of ``3''.]{
+    \subfigure[Original image of ``299''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/test/image2.png}
     }
-    \subfigure[A picture of ``8''.]{
+    \subfigure[Original image of ``128''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/test/image3.png}
     }
-    \subfigure[A picture of ``23''.]{
+    \subfigure[Original image of ``50''.]{
         \centering
         \includegraphics[width=0.33\textwidth]{graphics/test/image4.png}
     }
@@ -205,19 +205,19 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[A picture of ``30''.]{
+    \subfigure[``33'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/test/image1_crop.png}
     }
-    \subfigure[A picture of ``3''.]{
+    \subfigure[``299'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/test/image2_crop.png}
     }
-    \subfigure[A picture of ``8''.]{
+    \subfigure[``128'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/test/image3_crop.png}
     }
-    \subfigure[A picture of ``23''.]{
+    \subfigure[``50'']{
         \centering
         \includegraphics[width=0.2\textwidth]{graphics/test/image4_crop.png}
     }
@@ -227,15 +227,15 @@ My preprocessing algorithm iterated over the entire training and testing data an
 
 \begin{figure*}[ht]
     \centering
-    \subfigure[Encoding for ``30''.]{
+    \subfigure[Encoding for ``33''.]{
         \centering
-        \includegraphics[width=0.45\textwidth]{graphics/test/image1_onehot_30.png}
+        \includegraphics[width=0.45\textwidth]{graphics/test/image1_onehot.png}
     }
-    \subfigure[Encoding for ``3''.]{
+    \subfigure[Encoding for ``299''.]{
         \centering
-        \includegraphics[width=0.45\textwidth]{graphics/test/image2_onehot_3.png}
+        \includegraphics[width=0.45\textwidth]{graphics/test/image2_onehot.png}
     }
-    \caption{This figure shows the encoding for two test images: ``30'' and ``3''.}
+    \caption{This figure shows the encoding for two test images: ``33'' and ``299''.}
     \label{fig:training_onehot}
 \end{figure*}
 
