@@ -7,14 +7,14 @@ import tensorflow as tf
 
 # variable declaration helper functions
 # Make the weight variables be a little noisy around 0.0.
-def weight_variable(shape):
+def weight_variable(shape, var_name):
 	initial = tf.truncated_normal(shape, stddev=0.1)
-	return tf.Variable(initial)
+	return tf.Variable(initial, name=var_name)
 
 # creates a small positive bias
-def bias_variable(shape):
+def bias_variable(shape, var_name):
 	initial = tf.constant(0.1, shape=shape)
-	return tf.Variable(initial)
+	return tf.Variable(initial, name=var_name)
 
 # variable_summaries collects the mean, stdev, max, and min
 # values of the supplied variable, var.
