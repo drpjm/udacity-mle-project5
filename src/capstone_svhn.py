@@ -87,11 +87,18 @@ def svhn_model(Xin, var_tuples, shape_props, keep_prob):
 def run(train_fname):
 	graph = tf.Graph()
 	with graph.as_default():
+		keep_prob = 0.9
 		# Load the training data set.
 		train_dataset = load_svhn_pkl(train_fname)
 		# Build input pipeline.
 		Xplace = tf.placeholder(tf.float32, [None,1024])
 		Ximg = tf.reshape(Xplace, [-1,32,32,1], "Ximg")
+
+		# The input placeholder is 6x11 - 6 labels, size 11 one-hot encoding.
+		yplace = tf.placeholder(tf.int32, [None, 66])
+		# Extract labels by getting ytarget[i] for z_i, where z is an output label,
+		# for example, z_L = length of the street number.
+		ytarget = tf.reshape(yplace, [-1,6,11], "ytarget")
 		
 		# Setup tensor shape properties.
 		svhn_props = ShapeProps(5, 1, [16,32,64], 32)
@@ -112,28 +119,69 @@ def run(train_fname):
 		# Layer 3: Conv -> Relu; Output is a 1x8x8x64 tensor.
 		l3_vars = var_tuples[2]
 		layer3 = tf.nn.relu( tfh.conv2d(maxpool2, l3_vars[0]) + l3_vars[1], "layer3" )
-		print "Output tensor shape = " + str(layer3.get_shape())
-		# Fully Connected layer:
-		fcin_size = int(layer3.get_shape()[1]*layer3.get_shape()[2]*layer3.get_shape()[3])
-		fc_W1 = tf.Variable(tf.truncated_normal([fcin_size, int(pow(2,11))], stddev=0.1), name="fc_W1")
-		fc_b1 = tf.Variable(tf.constant(0.1,shape=[int(pow(2,11))]), name="fc_b1")
-		fc_input1 = tf.reshape(layer3, [-1,fcin_size], "fc1_input1")
-		fc_layer1 = tf.nn.relu( tf.matmul(fc_input1, fc_W1) + fc_b1, name="fc_layer1" )
-				
-		# Build loss operations
-		# The input placeholder is 6x11 - 6 labels, size 11 one-hot encoding.
-		yplace = tf.placeholder(tf.float32, [None, 66])
-		ytarget = tf.reshape(yplace, [-1,6,11], "ytarget")
+		# Fully Connected layer: Creates a feature vector of size 2^11 that will be
+		# fed into the 6 different feature extractors.
+		fc1in_size = int(layer3.get_shape()[1]*layer3.get_shape()[2]*layer3.get_shape()[3])
+		fc1out_size = int(pow(2,11))
+		fc1_W = tf.Variable(tf.truncated_normal([fc1in_size, fc1out_size], stddev=0.1), name="fc1_W")
+		fc1_b = tf.Variable(tf.constant(0.1,shape=[fc1out_size]), name="fc1_b")
+		fc1_input = tf.reshape(layer3, [-1,fc1in_size], "fc1_input1")
+		fc1_layer = tf.nn.relu( tf.matmul(fc1_input, fc1_W) + fc1_b, name="fc1_layer" )
+		# Add a dropout layer before the feature vector is sent to the variables.
+		dropout = tf.nn.dropout(fc1_layer, keep_prob)		
+		#
+		# The output of the fully connected layer is fed into 6 different
+		# variable outputs: FC -> softmax.
+		#
+		num_bins = 11
+		# Length
+		fc_zL_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_zL_W")
+		fc_zL_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_zL_b")
+		z_L = tf.matmul(dropout, fc_zL_W) + fc_zL_b
+# 		z_L = tf.nn.softmax( tf.matmul(dropout, fc_zL_W) + fc_zL_b, name="z_L" )
+		# First digit
+		fc_z1_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z1_W")
+		fc_z1_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z1_b")
+		z_1 = tf.matmul(dropout, fc_z1_W) + fc_z1_b
+# 		z_1 = tf.nn.softmax( tf.matmul(dropout, fc_z1_W) + fc_z1_b, name="z_1" )
+		# Second digit
+		fc_z2_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z2_W")
+		fc_z2_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z2_b")
+		z_2 = tf.matmul(dropout, fc_z2_W) + fc_z2_b
+# 		z_2 = tf.nn.softmax( tf.matmul(dropout, fc_z2_W) + fc_z2_b, name="z_2" )
+		# Third digit
+		fc_z3_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z3_W")
+		fc_z3_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z3_b")
+		z_3 = tf.matmul(dropout, fc_z3_W) + fc_z3_b
+# 		z_3 = tf.nn.softmax( tf.matmul(dropout, fc_z3_W) + fc_z3_b, name="z_3" )
+		# Fourth digit
+		fc_z4_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z4_W")
+		fc_z4_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z4_b")
+		z_4 = tf.matmul(dropout, fc_z4_W) + fc_z4_b
+# 		z_4 = tf.nn.softmax( tf.matmul(dropout, fc_z4_W) + fc_z4_b, name="z_4" )
+		# Fourth digit
+		fc_z5_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z5_W")
+		fc_z5_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z5_b")
+		z_5 = tf.matmul(dropout, fc_z5_W) + fc_z5_b
+# 		z_5 = tf.nn.softmax( tf.matmul(dropout, fc_z5_W) + fc_z5_b, name="z_5" )
 		
-		# Init variables
+		# Build loss operations over the batch.
+# 		label_L = ytarget[:,0,:]
+# 		xentropy_L = tf.nn.sparse_softmax_cross_entropy_with_logits(z_L, label_L)
+		
+		# Test Work here:
 		sess = tf.Session()
 		sess.run(tf.initialize_all_variables())
 		Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
-		res = sess.run(fc_layer1, feed_dict={Xplace : Xbatch})
+		res = sess.run(z_L, feed_dict={Xplace : Xbatch})
+		yres = sess.run(ytarget, feed_dict={yplace : ybatch})
 		print "Result shape: " + str(np.shape(res))
-		# Run NN learning processes.
+		
+		# Run NN learning processes:
+# 		for i in range(num_iters):
+			# Learn something! :) 
 
-	return res
+	return res, yres
 
 if __name__ == '__main__':
 	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
