@@ -95,7 +95,8 @@ def run(train_fname):
 		Ximg = tf.reshape(Xplace, [-1,32,32,1], "Ximg")
 
 		# The input placeholder is 6x11 - 6 labels, size 11 one-hot encoding.
-		yplace = tf.placeholder(tf.int32, [None, 66])
+		yplace = tf.placeholder(tf.float32, [None, 66])
+# 		yplace = tf.placeholder(tf.int32, [None, 66])
 		# Extract labels by getting ytarget[i] for z_i, where z is an output label,
 		# for example, z_L = length of the street number.
 		ytarget = tf.reshape(yplace, [-1,6,11], "ytarget")
@@ -138,50 +139,62 @@ def run(train_fname):
 		fc_zL_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_zL_W")
 		fc_zL_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_zL_b")
 		z_L = tf.matmul(dropout, fc_zL_W) + fc_zL_b
-# 		z_L = tf.nn.softmax( tf.matmul(dropout, fc_zL_W) + fc_zL_b, name="z_L" )
+
 		# First digit
 		fc_z1_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z1_W")
 		fc_z1_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z1_b")
 		z_1 = tf.matmul(dropout, fc_z1_W) + fc_z1_b
-# 		z_1 = tf.nn.softmax( tf.matmul(dropout, fc_z1_W) + fc_z1_b, name="z_1" )
+
 		# Second digit
 		fc_z2_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z2_W")
 		fc_z2_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z2_b")
 		z_2 = tf.matmul(dropout, fc_z2_W) + fc_z2_b
-# 		z_2 = tf.nn.softmax( tf.matmul(dropout, fc_z2_W) + fc_z2_b, name="z_2" )
+
 		# Third digit
 		fc_z3_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z3_W")
 		fc_z3_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z3_b")
 		z_3 = tf.matmul(dropout, fc_z3_W) + fc_z3_b
-# 		z_3 = tf.nn.softmax( tf.matmul(dropout, fc_z3_W) + fc_z3_b, name="z_3" )
+
 		# Fourth digit
 		fc_z4_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z4_W")
 		fc_z4_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z4_b")
 		z_4 = tf.matmul(dropout, fc_z4_W) + fc_z4_b
-# 		z_4 = tf.nn.softmax( tf.matmul(dropout, fc_z4_W) + fc_z4_b, name="z_4" )
-		# Fourth digit
+# 		
+		# Fifth digit
 		fc_z5_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z5_W")
 		fc_z5_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z5_b")
 		z_5 = tf.matmul(dropout, fc_z5_W) + fc_z5_b
-# 		z_5 = tf.nn.softmax( tf.matmul(dropout, fc_z5_W) + fc_z5_b, name="z_5" )
-		
+# 		
+		#
 		# Build loss operations over the batch.
-# 		label_L = ytarget[:,0,:]
-# 		xentropy_L = tf.nn.sparse_softmax_cross_entropy_with_logits(z_L, label_L)
+		#
+		mean_L = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,0,:]) )
+		mean_1 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,1,:]) )
+		mean_2 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,2,:]) )
+		mean_3 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,3,:]) )
+		mean_4 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,4,:]) )
+		mean_5 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,5,:]) )
+		total_loss = mean_L + mean_1 + mean_2 + mean_3 + mean_4 + mean_5
+		# Attach the Adagrad optimizer with a decaying learning rate.
+		step_idx = tf.Variable(0)
+		learn_rate = tf.train.exponential_decay(0.1, step_idx, 1000, 0.95)
+		train_step = tf.train.AdagradOptimizer( learn_rate, name="train_adagrad_with_decay" )
+		train_step.minimize(total_loss, global_step=step_idx)
 		
 		# Test Work here:
 		sess = tf.Session()
 		sess.run(tf.initialize_all_variables())
 		Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
-		res = sess.run(z_L, feed_dict={Xplace : Xbatch})
-		yres = sess.run(ytarget, feed_dict={yplace : ybatch})
+		res = sess.run(total_loss, feed_dict={Xplace : Xbatch, yplace : ybatch})
+# 		yres = sess.run(ytarget, feed_dict={yplace : ybatch})
 		print "Result shape: " + str(np.shape(res))
 		
 		# Run NN learning processes:
 # 		for i in range(num_iters):
 			# Learn something! :) 
 
-	return res, yres
+# 	return res, yres
+	return res
 
 if __name__ == '__main__':
 	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
