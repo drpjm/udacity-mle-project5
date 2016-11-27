@@ -9,6 +9,7 @@ import numpy as np
 import random as rnd
 import scipy as sp
 import os
+import time
 import tfhelpers as tfh
 import tensorflow as tf
 from collections import namedtuple
@@ -84,10 +85,10 @@ def svhn_model(Xin, var_tuples, shape_props, keep_prob):
 	# Return the 6 logit values.
 	return maxpool1
 
-def run(train_fname):
+def run(train_fname, num_steps, isTest):
 	graph = tf.Graph()
 	with graph.as_default():
-		keep_prob = 0.9
+		keep_prob = 0.8
 		# Load the training data set.
 		train_dataset = load_svhn_pkl(train_fname)
 		# Build input pipeline.
@@ -177,25 +178,34 @@ def run(train_fname):
 		total_loss = mean_L + mean_1 + mean_2 + mean_3 + mean_4 + mean_5
 		# Attach the Adagrad optimizer with a decaying learning rate.
 		step_idx = tf.Variable(0)
-		learn_rate = tf.train.exponential_decay(0.1, step_idx, 1000, 0.95)
-		train_step = tf.train.AdagradOptimizer( learn_rate, name="train_adagrad_with_decay" )
-		train_step.minimize(total_loss, global_step=step_idx)
+		learn_rate = tf.train.exponential_decay(0.1, step_idx, num_steps, 0.95)
+		adagrad_opt = tf.train.AdagradOptimizer( learn_rate, name="train_adagrad_with_decay" )
+		train_step = adagrad_opt.minimize(total_loss, global_step=step_idx)
 		
-		# Test Work here:
-		sess = tf.Session()
-		sess.run(tf.initialize_all_variables())
-		Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
-		res = sess.run(total_loss, feed_dict={Xplace : Xbatch, yplace : ybatch})
-# 		yres = sess.run(ytarget, feed_dict={yplace : ybatch})
-		print "Result shape: " + str(np.shape(res))
-		
-		# Run NN learning processes:
-# 		for i in range(num_iters):
-			# Learn something! :) 
-
-# 	return res, yres
-	return res
+		if isTest:
+			# Test Work here:
+			sess = tf.Session()
+			sess.run(tf.initialize_all_variables())
+			Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
+			res = sess.run(total_loss, feed_dict={Xplace : Xbatch, yplace : ybatch})
+		else:
+			# Run NN learning processes:
+			sess = tf.Session()
+			sess.run(tf.initialize_all_variables())
+			batch_size = 64
+			runtimes = []
+	 		for i in range(num_steps):
+	 			start = time.time()
+				Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], batch_size)
+				_, curr_loss  = sess.run([train_step, total_loss], feed_dict={Xplace : Xbatch, yplace : ybatch})
+	 			end = time.time()
+				if i % 100 == 0:
+					runtimes.append(end-start)
+					print "Step " + str(i) + ": current loss = " + str(curr_loss)
+			avg_runtimes = np.mean(np.array(runtimes))
+			print "Average runtime = " + str(avg_runtimes)
+	return
 
 if __name__ == '__main__':
 	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
-	run(train_fname)
+	run(train_fname, 5000, False)
