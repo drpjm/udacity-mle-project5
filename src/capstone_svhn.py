@@ -64,27 +64,6 @@ def create_fc_vars(fc_shape, num_outs):
 		fc_var_tuples.append( (W,b) )
 	return fc_var_tuples
 
-# Full CNN architecture for the svhn model.
-# Returns a logit value for the length of the house number and
-# a logit value for each of the numbers (1-5 positions).
-# Xin - svhn image input.
-# shape_props - the ShapeProps tuple.
-# keep_prob - probability for the dropout layer.
-def svhn_model(Xin, var_tuples, shape_props, keep_prob):
-	# Conv Layer 1 - 5x5x1x16, ReLU activation.
-	l1_vars = var_tuples[0]
-	layer1 = tf.nn.relu( tfh.conv2d(Xin, l1_vars[0]) + l1_vars[1], "layer1" )
-	maxpool1 = tfh.max_pool_2x2( layer1 ) # Output is (1x16x16x16 tensor)
-	# Conv Layer 2 - 5x5x16x32, ReLU activation.
-	l2_vars = var_tuples[1]
-	# Conv Layer 3 - 5x5x32x64
-	l3_vars = var_tuples[2]
-	# Fully connected 1 (should connect 8x8x64 to 64)
-	# TODO: Try a dropout for better generalization.
-	# TODO: Make 2 FC layers: 8x8x64 to 2^11, dropout, 2^11 to 2^6.
-	# Return the 6 logit values.
-	return maxpool1
-
 def run(train_fname, num_steps, isTest):
 	graph = tf.Graph()
 	with graph.as_default():
@@ -96,11 +75,11 @@ def run(train_fname, num_steps, isTest):
 		Ximg = tf.reshape(Xplace, [-1,32,32,1], "Ximg")
 
 		# The input placeholder is 6x11 - 6 labels, size 11 one-hot encoding.
-		yplace = tf.placeholder(tf.float32, [None, 66])
-# 		yplace = tf.placeholder(tf.int32, [None, 66])
-		# Extract labels by getting ytarget[i] for z_i, where z is an output label,
+		y_place = tf.placeholder(tf.float32, [None, 66])
+# 		y_place = tf.placeholder(tf.int32, [None, 66])
+		# Extract labels by getting y_target[i] for z_i, where z is an output label,
 		# for example, z_L = length of the street number.
-		ytarget = tf.reshape(yplace, [-1,6,11], "ytarget")
+		y_target = tf.reshape(y_place, [-1,6,11], "y_target")
 		
 		# Setup tensor shape properties.
 		svhn_props = ShapeProps(5, 1, [16,32,64], 32)
@@ -169,12 +148,12 @@ def run(train_fname, num_steps, isTest):
 		#
 		# Build loss operations over the batch.
 		#
-		mean_L = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,0,:]) )
-		mean_1 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,1,:]) )
-		mean_2 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,2,:]) )
-		mean_3 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,3,:]) )
-		mean_4 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,4,:]) )
-		mean_5 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, ytarget[:,5,:]) )
+		mean_L = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,0,:]) )
+		mean_1 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,1,:]) )
+		mean_2 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,2,:]) )
+		mean_3 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,3,:]) )
+		mean_4 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,4,:]) )
+		mean_5 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,5,:]) )
 		total_loss = mean_L + mean_1 + mean_2 + mean_3 + mean_4 + mean_5
 		# Attach the Adagrad optimizer with a decaying learning rate.
 		step_idx = tf.Variable(0)
@@ -182,30 +161,46 @@ def run(train_fname, num_steps, isTest):
 		adagrad_opt = tf.train.AdagradOptimizer( learn_rate, name="train_adagrad_with_decay" )
 		train_step = adagrad_opt.minimize(total_loss, global_step=step_idx)
 		
+		y_L = tf.nn.softmax(z_L)
+		y_1 = tf.nn.softmax(z_1)
+		y_2 = tf.nn.softmax(z_2)
+		y_3 = tf.nn.softmax(z_3)
+		y_4 = tf.nn.softmax(z_4)
+		y_5 = tf.nn.softmax(z_5)
+		# Probability (y_probs) of label. Tensor shape = (batch_size, 6, 11)
+		y_probs = tf.pack([y_L, y_1, y_2, y_3, y_4, y_5], axis=1, name="y_probs")
+		# Argmax tensor shape = (batch_size, 6)
+		y_argmax = tf.arg_max(y_probs, dimension=2)
+		# Turn into a one hot encoded tensor with size (batch_size, 6, 11)
+		y_pred = tf.one_hot(y_argmax, depth=num_bins, on_value=1, off_value=0, axis=-1, dtype=tf.int32, name="y_pred")
+		
 		if isTest:
 			# Test Work here:
 			sess = tf.Session()
 			sess.run(tf.initialize_all_variables())
-			Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
-			res = sess.run(total_loss, feed_dict={Xplace : Xbatch, yplace : ybatch})
+			Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 2)
+			loss, preds, targets = sess.run([total_loss, y_pred, y_target], feed_dict={Xplace : Xbatch, y_place : ybatch})
+			return loss, preds, targets
 		else:
 			# Run NN learning processes:
 			sess = tf.Session()
 			sess.run(tf.initialize_all_variables())
-			batch_size = 64
-			runtimes = []
+			batch_size = 1
+# 			runtimes = []
 	 		for i in range(num_steps):
-	 			start = time.time()
 				Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], batch_size)
-				_, curr_loss  = sess.run([train_step, total_loss], feed_dict={Xplace : Xbatch, yplace : ybatch})
-	 			end = time.time()
-				if i % 100 == 0:
-					runtimes.append(end-start)
+				_, curr_probs, curr_loss  = sess.run([train_step, y_probs, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
+				
+				if i % 250 == 0:
+# 					runtimes.append(end-start)
 					print "Step " + str(i) + ": current loss = " + str(curr_loss)
-			avg_runtimes = np.mean(np.array(runtimes))
-			print "Average runtime = " + str(avg_runtimes)
-	return
+					# TODO: Compute the accuracy
+					
+					
+# 			avg_runtimes = np.mean(np.array(runtimes))
+# 			print "Average runtime = " + str(avg_runtimes)
+			return
 
-if __name__ == '__main__':
-	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
-	run(train_fname, 5000, False)
+# if __name__ == '__main__':
+# 	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
+# 	run(train_fname, 501, True)
