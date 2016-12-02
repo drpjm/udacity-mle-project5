@@ -30,6 +30,16 @@ def next_batch(Xs, ys, batch_size):
 	ys_sample = ys_sample.reshape(-1, ys_shape[1]*ys_shape[2])
 	return Xs_sample, ys_sample
 
+def accuracy(predictions, labels):
+	batch_size = np.shape(predictions)[0]
+	num_correct = 0
+	for i in range(0,batch_size):
+		ypred = predictions[i]
+		ylabel = labels[i]
+		if np.array_equal(ypred, ylabel):
+			num_correct = num_correct + 1
+	return 100.0 * (float(num_correct) / float(batch_size))
+
 def test_next_batch(fname, size):
 	# Used for Eclipse PyDev development/test:
 	# /Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl
@@ -67,7 +77,7 @@ def create_fc_vars(fc_shape, num_outs):
 def run(train_fname, num_steps, isTest):
 	graph = tf.Graph()
 	with graph.as_default():
-		keep_prob = 0.8
+		keep_prob = 0.9
 		# Load the training data set.
 		train_dataset = load_svhn_pkl(train_fname)
 		# Build input pipeline.
@@ -100,65 +110,75 @@ def run(train_fname, num_steps, isTest):
 		# Layer 3: Conv -> Relu; Output is a 1x8x8x64 tensor.
 		l3_vars = var_tuples[2]
 		layer3 = tf.nn.relu( tfh.conv2d(maxpool2, l3_vars[0]) + l3_vars[1], "layer3" )
+		dropout = tf.nn.dropout(layer3, keep_prob)		
 		# Fully Connected layer: Creates a feature vector of size 2^11 that will be
 		# fed into the 6 different feature extractors.
-		fc1in_size = int(layer3.get_shape()[1]*layer3.get_shape()[2]*layer3.get_shape()[3])
-		fc1out_size = int(pow(2,11))
-		fc1_W = tf.Variable(tf.truncated_normal([fc1in_size, fc1out_size], stddev=0.1), name="fc1_W")
-		fc1_b = tf.Variable(tf.constant(0.1,shape=[fc1out_size]), name="fc1_b")
-		fc1_input = tf.reshape(layer3, [-1,fc1in_size], "fc1_input1")
-		fc1_layer = tf.nn.relu( tf.matmul(fc1_input, fc1_W) + fc1_b, name="fc1_layer" )
+		fc1in_size = int(dropout.get_shape()[1]*dropout.get_shape()[2]*dropout.get_shape()[3])
+# 		fc1out_size = int(pow(2,11))
+# 		fc1out_size = 11
+# 		fc1_W = tf.Variable(tf.truncated_normal([fc1in_size, fc1out_size], stddev=0.1), name="fc1_W")
+# 		fc1_b = tf.Variable(tf.constant(0.1,shape=[fc1out_size]), name="fc1_b")
+		fc1_input = tf.reshape(dropout, [-1,fc1in_size], "fc1_input1")
+# 		fc1_layer = tf.nn.relu( tf.matmul(fc1_input, fc1_W) + fc1_b, name="fc1_layer" )
 		# Add a dropout layer before the feature vector is sent to the variables.
-		dropout = tf.nn.dropout(fc1_layer, keep_prob)		
 		#
 		# The output of the fully connected layer is fed into 6 different
 		# variable outputs: FC -> softmax.
 		#
 		num_bins = 11
 		# Length
-		fc_zL_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_zL_W")
+		fc_zL_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_zL_W")
 		fc_zL_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_zL_b")
-		z_L = tf.matmul(dropout, fc_zL_W) + fc_zL_b
+		z_L = tf.matmul(fc1_input, fc_zL_W) + fc_zL_b
 
 		# First digit
-		fc_z1_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z1_W")
+		fc_z1_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_z1_W")
 		fc_z1_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z1_b")
-		z_1 = tf.matmul(dropout, fc_z1_W) + fc_z1_b
+		z_1 = tf.matmul(fc1_input, fc_z1_W) + fc_z1_b
 
 		# Second digit
-		fc_z2_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z2_W")
+		fc_z2_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_z2_W")
 		fc_z2_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z2_b")
-		z_2 = tf.matmul(dropout, fc_z2_W) + fc_z2_b
+		z_2 = tf.matmul(fc1_input, fc_z2_W) + fc_z2_b
 
 		# Third digit
-		fc_z3_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z3_W")
+		fc_z3_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_z3_W")
 		fc_z3_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z3_b")
-		z_3 = tf.matmul(dropout, fc_z3_W) + fc_z3_b
+		z_3 = tf.matmul(fc1_input, fc_z3_W) + fc_z3_b
 
 		# Fourth digit
-		fc_z4_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z4_W")
+		fc_z4_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_z4_W")
 		fc_z4_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z4_b")
-		z_4 = tf.matmul(dropout, fc_z4_W) + fc_z4_b
+		z_4 = tf.matmul(fc1_input, fc_z4_W) + fc_z4_b
 # 		
 		# Fifth digit
-		fc_z5_W = tf.Variable(tf.truncated_normal([fc1out_size, num_bins], stddev=0.1), name="fc_z5_W")
+		fc_z5_W = tf.Variable(tf.truncated_normal([fc1in_size, num_bins], stddev=0.1), name="fc_z5_W")
 		fc_z5_b = tf.Variable(tf.constant(0.1,shape=[num_bins]), name="fc_z5_b")
-		z_5 = tf.matmul(dropout, fc_z5_W) + fc_z5_b
+		z_5 = tf.matmul(fc1_input, fc_z5_W) + fc_z5_b 
 # 		
 		#
 		# Build loss operations over the batch.
 		#
-		mean_L = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,0,:]) )
-		mean_1 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,1,:]) )
-		mean_2 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,2,:]) )
-		mean_3 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,3,:]) )
-		mean_4 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,4,:]) )
-		mean_5 = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,5,:]) )
+		xent_L = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,0,:])
+		mean_L = tf.reduce_mean( xent_L )
+		xent_1 = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,1,:])
+		mean_1 = tf.reduce_mean( xent_1 )
+		xent_2 = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,2,:])
+		mean_2 = tf.reduce_mean( xent_2 )
+		xent_3 = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,3,:])
+		mean_3 = tf.reduce_mean( xent_3 )
+		xent_4 = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,4,:])
+		mean_4 = tf.reduce_mean( xent_4 )
+		xent_5 = tf.nn.softmax_cross_entropy_with_logits(z_L, y_target[:,5,:])
+		mean_5 = tf.reduce_mean( xent_5 )
+		
+# 		all_ents = tf.pack([xent_L, xent_1, xent_2, xent_3, xent_4, xent_5])
+		
 		total_loss = mean_L + mean_1 + mean_2 + mean_3 + mean_4 + mean_5
 		# Attach the Adagrad optimizer with a decaying learning rate.
 		step_idx = tf.Variable(0)
-		learn_rate = tf.train.exponential_decay(0.1, step_idx, num_steps, 0.95)
-		adagrad_opt = tf.train.AdagradOptimizer( learn_rate, name="train_adagrad_with_decay" )
+# 		learn_rate = tf.train.exponential_decay(0.005, step_idx, num_steps, 0.95)
+		adagrad_opt = tf.train.AdagradOptimizer( 0.001, name="train_adagrad_with_decay" )
 		train_step = adagrad_opt.minimize(total_loss, global_step=step_idx)
 		
 		y_L = tf.nn.softmax(z_L)
@@ -172,15 +192,16 @@ def run(train_fname, num_steps, isTest):
 		# Argmax tensor shape = (batch_size, 6)
 		y_argmax = tf.arg_max(y_probs, dimension=2)
 		# Turn into a one hot encoded tensor with size (batch_size, 6, 11)
-		y_pred = tf.one_hot(y_argmax, depth=num_bins, on_value=1, off_value=0, axis=-1, dtype=tf.int32, name="y_pred")
+		y_preds = tf.one_hot(y_argmax, depth=num_bins, on_value=1, off_value=0, axis=-1, dtype=tf.int32, name="y_pred")
+		y_target_int = tf.to_int32(y_target)
 		
 		if isTest:
 			# Test Work here:
 			sess = tf.Session()
 			sess.run(tf.initialize_all_variables())
-			Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 2)
-			loss, preds, targets = sess.run([total_loss, y_pred, y_target], feed_dict={Xplace : Xbatch, y_place : ybatch})
-			return loss, preds, targets
+			Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], 1)
+			result = sess.run([total_loss, y_preds, y_target], feed_dict={Xplace : Xbatch, y_place : ybatch})
+			return result
 		else:
 			# Run NN learning processes:
 			sess = tf.Session()
@@ -189,18 +210,21 @@ def run(train_fname, num_steps, isTest):
 # 			runtimes = []
 	 		for i in range(num_steps):
 				Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], batch_size)
-				_, curr_probs, curr_loss  = sess.run([train_step, y_probs, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
+				_, curr_probs, curr_targets, curr_loss  = sess.run([train_step, y_probs, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
+# 				_, curr_preds, curr_targets, curr_loss  = sess.run([train_step, y_preds, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
 				
-				if i % 250 == 0:
+				if i % 500 == 0:
 # 					runtimes.append(end-start)
 					print "Step " + str(i) + ": current loss = " + str(curr_loss)
-					# TODO: Compute the accuracy
-					
+					# Compute the accuracy
+# 					print "Entropies: \n" + str(ents)
+# 					acc = accuracy(curr_preds, curr_targets)
+# 					print "Batch accuracy = " + str(acc)
 					
 # 			avg_runtimes = np.mean(np.array(runtimes))
 # 			print "Average runtime = " + str(avg_runtimes)
 			return
 
-# if __name__ == '__main__':
-# 	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
-# 	run(train_fname, 501, True)
+if __name__ == '__main__':
+	train_fname = '/Users/pjmartin/Documents/Udacity/MachineLearningProgram/Project5/udacity-mle-project5/src/svhn_train.pkl'
+	run(train_fname, 2001, False)
