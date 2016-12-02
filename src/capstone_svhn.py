@@ -206,20 +206,20 @@ def run(train_fname, num_steps, isTest):
 			# Run NN learning processes:
 			sess = tf.Session()
 			sess.run(tf.initialize_all_variables())
-			batch_size = 1
+			batch_size = 16
 # 			runtimes = []
 	 		for i in range(num_steps):
 				Xbatch, ybatch = next_batch(train_dataset["data"], train_dataset["labels"], batch_size)
-				_, curr_probs, curr_targets, curr_loss  = sess.run([train_step, y_probs, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
-# 				_, curr_preds, curr_targets, curr_loss  = sess.run([train_step, y_preds, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
+# 				_, curr_probs, curr_targets, curr_loss  = sess.run([train_step, y_probs, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
+				_, curr_preds, curr_targets, curr_loss  = sess.run([train_step, y_preds, y_target_int, total_loss], feed_dict={Xplace : Xbatch, y_place : ybatch})
 				
 				if i % 500 == 0:
 # 					runtimes.append(end-start)
 					print "Step " + str(i) + ": current loss = " + str(curr_loss)
 					# Compute the accuracy
 # 					print "Entropies: \n" + str(ents)
-# 					acc = accuracy(curr_preds, curr_targets)
-# 					print "Batch accuracy = " + str(acc)
+					acc = accuracy(curr_preds, curr_targets)
+					print "Batch accuracy = " + str(acc)
 					
 # 			avg_runtimes = np.mean(np.array(runtimes))
 # 			print "Average runtime = " + str(avg_runtimes)
